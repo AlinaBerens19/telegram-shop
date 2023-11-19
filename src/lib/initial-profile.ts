@@ -12,21 +12,25 @@ export const initialProfile = async () => {
     }
 
     const profile = await db.profile.findUnique({
-        where: { id: user.id },
+        where: { userId: user.id },
     })
+
+    console.log('profile', profile)
 
     if (profile) {
         return profile
     }
 
-    const newProfile = await db.profile.create({
-        data: {
-            userId: user.id,
-            name: `${user.firstName} ${user.lastName}`,
-            imageUrl: user.imageUrl,
-            email: user.emailAddresses[0].emailAddress,
-        },
-     })
+    else {
+        const newProfile = await db.profile.create({
+            data: {
+                userId: user.id,
+                name: `${user.firstName} ${user.lastName}`,
+                imageUrl: user.imageUrl,
+                email: user.emailAddresses[0].emailAddress,
+            },
+        })
 
-     return newProfile
+        return newProfile
+    }
 }
