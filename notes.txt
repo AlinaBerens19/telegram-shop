@@ -1,0 +1,205 @@
+If .Next folder persist in files after app is shut down:
+- rm -rf .next
+
+It's a good idea to organize routes in (example) curled braces cause it does not impact the routing but can help to organize the code and use layout components to add some common styling for group of routes *
+
+## Prisma ##
+- npm i -D prisma
+- npx prisma init
+- npx prisma generate
+- npx prisma db push
+- npm i @prisma/client
+
+# If you want to use Prisma Studio to view and edit your data, you can install it using the following command:
+- npx prisma studio
+
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
+## Prisma Model Example ##
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  name      String?
+  imageUrl  String?  @db.Text
+  email     String   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   Member[]
+  servers   Server[]
+  channels  Channel[]
+}
+
+model Server {
+  id         String   @id @default(uuid())
+  name       String
+  imageUrl   String?  @db.Text
+  inviteCode String?  @unique
+
+  profileId  String
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  members    Member[]
+  channels   Channel[]
+
+  @@index([profileId])
+  
+}
+
+enum MeberRole {
+  MODERATOR
+  ADMIN
+  GUEST
+}
+
+model Member {
+  id        String    @id @default(uuid())
+  role      MeberRole @default(GUEST)
+
+  profileId  String
+  server    Server    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  serverId  String
+  profile   Profile   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([serverId])
+  @@index([profileId])
+}
+
+enum ChannelType {
+  TEXT
+  AUDIO
+  VIDEO
+}
+
+model Channel {
+  id        String      @id @default(uuid())
+  name      String
+  type      ChannelType @default(TEXT)
+
+  profileId String
+  profile   Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  serverId  String
+  server    Server      @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([profileId])
+  @@index([serverId])
+}
+
+#########################################################
+
+## lib/db.ts ##
+
+import { PrismaClient } from '@prisma/client'
+
+# Not affected by reloads in dev mode
+declare global {
+    var prisma: PrismaClient | undefined
+}
+
+export const db = global.prisma || new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') global.prisma = db
+
+#########################################################
+
+## Initial Profile ##
+# app/lib/initial-profile.ts
+
+import { currentUser, redirectToSignIn } from '@clerk/nextjs'
+import { db } from '@/lib/db'
+
+
+
+export const initialProfile = async () => {
+    const user = await currentUser()
+
+    if (!user) {
+        redirectToSignIn()
+        return
+    }
+
+    const profile = await db.profile.findUnique({
+        where: { id: user.id },
+    })
+
+    if (profile) {
+        return profile
+    }
+
+    const newProfile = await db.profile.create({
+        data: {
+            userId: user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            imageUrl: user.imageUrl,
+            email: user.emailAddresses[0].emailAddress,
+        },
+     })
+
+     return newProfile
+}
+
+#########################################################
+
+## Profile ##
+# app/(setup)/page.tsx - instead of (main)/page.tsx
+
+import { initialProfile  } from "@/lib/initial-profile"
+import { db } from "@/lib/db"
+import { redirect } from "next/navigation";
+
+const SetupPage = async () => {
+
+  const profile = await initialProfile();  
+
+  const server = await db.server.findFirst({
+    where: {
+      members: {
+        some: {
+          profileId: profile?.id
+        }
+      }
+    }
+  })
+
+  if (server) {
+    return redirect(`/servers/${server.id}`)
+  }
+
+  return (
+    // Should be created modal
+    <div>
+      Create a server
+    </div>
+  )
+}
+
+export default SetupPage
+
+#########################################################
+
+
