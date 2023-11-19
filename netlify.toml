@@ -1,6 +1,5 @@
 [build]
-  command = "npm run build"
-  publish = ".next"
+  command = "npm run build && npx prisma generate"
 
 [build.environment]
   NODE_VERSION = "v21.2.0"
