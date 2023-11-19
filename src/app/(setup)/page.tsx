@@ -20,12 +20,7 @@ const SetupPage = async () => {
     return redirect(`/servers/${server.id}`)
   }
 
-  return (
-    // Should be created modal
-    <div>
-      Create a server
-    </div>
-  )
+  return redirect(`/menu`)
 }
 
 export default SetupPage
