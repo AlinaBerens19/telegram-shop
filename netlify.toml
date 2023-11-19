@@ -1,6 +1,19 @@
 [build]
-  command = "npm run build && npx prisma generate"
+  command = "npm run build"
+  functions = "out_functions"
 
 [build.environment]
   NODE_VERSION = "v21.2.0"
 
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-core"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-core"
+  inputs = { publish = "out_functions" }
+
+[[plugins]]
+  package = "netlify-plugin-prisma"
