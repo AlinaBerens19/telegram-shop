@@ -10,9 +10,6 @@
 
 [[plugins]]
   package = "@netlify/plugin-functions-core"
-
-[[plugins]]
-  package = "@netlify/plugin-functions-core"
   inputs = { publish = "out_functions" }
 
 [[plugins]]
