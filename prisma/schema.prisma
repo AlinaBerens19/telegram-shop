@@ -33,7 +33,53 @@ model Profile {
   members   Member[]
   servers   Server[]
   channels  Channel[]
+  orders    Order[]
 }
+
+model MenuItem {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  imageUrl    String?  @db.Text
+  price       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Create a many-to-many relationship through the OrderItem model
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  profileId   String   
+  status      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // Create a many-to-many relationship through the OrderItem model
+  orderItems  OrderItem[]
+  @@index([profileId])
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  menuItemId  String
+  quantity    Int      // Add any additional fields related to the association here
+  totalSum    Int
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
 
 model Server {
   id         String   @id @default(uuid())

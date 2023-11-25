@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 
 interface CustomWindow extends Window {
     Telegram?: {
