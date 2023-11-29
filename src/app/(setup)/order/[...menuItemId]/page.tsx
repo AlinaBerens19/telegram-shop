@@ -1,7 +1,7 @@
 import Order from "@/components/order/Order"
 import Navigation from "../../../../components/navigation/NavigationMenu"
-import { db } from "@/lib/db"
 import { initialProfile  } from "@/lib/initial-profile"
+import { createOrUpdateOrder, getMenuItemDetails } from "../../actions/db/orderService"
 
 interface IParams {
     menuItemId: string
@@ -17,79 +17,36 @@ const OrderPage = async ({params}: {params: IParams}) => {
     let price = null
     let imageUrl = ''
     let orderId: string = ''
-    let orderItemId: string = ''
 
-    if(!profile?.id) {
-        throw new Error('User ID is not defined')
-    }
-    else {
-      try {
-          let order = await db.order.findFirst({
-            where: {
-              profileId: profile?.id.toString()
-            }
-          })
-          console.log(`Order found: ${order?.id}`)
-          
-          if(!order) {
-            order = await db.order.create({
-              data: {
-                profileId: profile?.id!.toString(),
-                status: 'ACTIVE'
-              }
-            })
-          }
-
-          orderId = order?.id
-          if(!orderId) {
-            throw new Error('Order ID is not defined')
-          }
-          else {
-            console.log('Order ID:', orderId)
-
-            let orderItem = await db.orderItem.findFirst({
-              where: {
-                orderId: orderId.toString()
-              }
-            })
-
-            if(!orderItem) {
-              orderItem = await db.orderItem.create({
-                data: {
-                  orderId: orderId.toString(),
-                  menuItemId: menuItemId.toString(),
-                  quantity: 1,
-                  totalSum: 0
-                }
-              })
-            }
-
-            orderItemId = orderItem?.id!
-
-            console.log('Order Item ID:', orderItemId)
-          }
-        }
-        catch (error) {
-            console.log(`Error creating order: ${error}`)
-        }
+    if (!profile?.id) {
+      throw new Error('User ID is not defined');
+    } else {
       
-        
-        try {
-          let data = await db.menuItem.findUnique({
-            where: {
-              id: menuItemId.toString()
-            }
-        })
-
-          name = data?.name
-          description = data?.description
-          price = data?.price
-          imageUrl = data?.imageUrl ? data.imageUrl!.replace(/,/g, ''): ''
-        }
-        catch (error) {
-            console.log(`Error retrieving menu item: ${error}`)
-        }
+      try {
+        orderId = await createOrUpdateOrder(
+          profile.id!.toString(),
+          menuItemId.toString()
+        );
+  
+        // orderId = orderIdResult;
+        // orderItemId = orderItemIdResult;
+      } catch (error) {
+        console.log(`Error creating or updating order: ${error}`);
+        // Handle error if necessary
       }
+  
+      try {
+        const menuItemDetails = await getMenuItemDetails(menuItemId.toString());
+  
+        name = menuItemDetails.name;
+        description = menuItemDetails.description;
+        price = menuItemDetails.price;
+        imageUrl = menuItemDetails.imageUrl;
+      } catch (error) {
+        console.log(`Error retrieving menu item details: ${error}`);
+        // Handle error if necessary
+      }
+    }
 
       return (
         <div className="flex flex-col h-screen justify-top pt-7 space-y-7 items-center">
@@ -100,9 +57,8 @@ const OrderPage = async ({params}: {params: IParams}) => {
     
           <div>
             <Order 
-              userId={profile?.id!}
               hidden={false}
-              orderItemId={orderItemId}
+              menuItemId={menuItemId}
               orderId={orderId}
               name={name}
               description={description}

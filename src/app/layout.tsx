@@ -3,6 +3,7 @@ import { Inter, Open_Sans } from 'next/font/google'
 import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { cn } from '@/lib/utils'
+import { RecoilRoot } from 'recoil';
 
 const font = Open_Sans({ subsets: ['latin'] })
 
@@ -17,22 +18,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={cn(
-          font.className,
-          "bg-white dark:bg-[#313338]"
-        )}>
-          {/* <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            storageKey="discord-theme"
-          > */}
-            {children}
-          {/* </ThemeProvider> */}
-        </body>
-      </html>
-    </ClerkProvider>
+      <ClerkProvider>
+        <html lang="en" suppressHydrationWarning>
+          <body className={cn(
+            font.className,
+            "bg-white dark:bg-[#313338]"
+          )}>
+            {/* <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem={false}
+              storageKey="discord-theme"
+            > */}
+              {children}
+            {/* </ThemeProvider> */}
+          </body>
+        </html>
+      </ClerkProvider>
   )
 }
